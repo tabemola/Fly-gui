@@ -1,4 +1,4 @@
--- Made by casafelizola | PC Fly Script with Black UI + F Toggle
+-- Made by casafelizola | PC Fly Script with Q/E Speed Toggle + F Key Fly
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,27 +11,36 @@ local vertical = 0
 local moveDirection = Vector3.new()
 local bodyVelocity, bodyGyro
 
--- === UI Setup ===
+-- === UI ===
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "FlyToggleUI"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 180, 0, 60)
-main.Position = UDim2.new(0.5, -90, 0.1, 0)
+main.Size = UDim2.new(0, 200, 0, 70)
+main.Position = UDim2.new(0.5, -100, 0.1, 0)
 main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
 local toggle = Instance.new("TextButton", main)
-toggle.Size = UDim2.new(1, -20, 0, 40)
-toggle.Position = UDim2.new(0, 10, 0, 10)
+toggle.Size = UDim2.new(1, -20, 0, 30)
+toggle.Position = UDim2.new(0, 10, 0, 5)
 toggle.Text = "Fly: OFF (F)"
 toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 toggle.Font = Enum.Font.SourceSansBold
 toggle.TextScaled = true
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+
+local speedLabel = Instance.new("TextLabel", main)
+speedLabel.Size = UDim2.new(1, -20, 0, 20)
+speedLabel.Position = UDim2.new(0, 10, 0, 40)
+speedLabel.Text = "Speed: 100 (Q / E)"
+speedLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.TextScaled = true
 
 -- === Fly functions ===
 local function startFly()
@@ -42,7 +51,6 @@ local function startFly()
 	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 	local hrp = character:WaitForChild("HumanoidRootPart")
 	local humanoid = character:WaitForChild("Humanoid")
-
 	humanoid.PlatformStand = true
 
 	bodyVelocity = Instance.new("BodyVelocity", hrp)
@@ -73,7 +81,7 @@ local function toggleFly()
 	if flying then stopFly() else startFly() end
 end
 
--- === Input bindings ===
+-- === Input handling ===
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	local cam = workspace.CurrentCamera
@@ -84,6 +92,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if input.KeyCode == Enum.KeyCode.Space then vertical = 1 end
 	if input.KeyCode == Enum.KeyCode.LeftControl then vertical = -1 end
 	if input.KeyCode == Enum.KeyCode.F then toggleFly() end
+	if input.KeyCode == Enum.KeyCode.E then
+		speed = speed + 10
+		speedLabel.Text = "Speed: " .. speed .. " (Q / E)"
+	end
+	if input.KeyCode == Enum.KeyCode.Q then
+		speed = math.max(10, speed - 10)
+		speedLabel.Text = "Speed: " .. speed .. " (Q / E)"
+	end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
