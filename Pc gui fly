@@ -1,0 +1,83 @@
+-- Made by casafelizola (PC Fly Script Only)
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local flying = false
+local speed = 100
+local velocity = Vector3.new()
+local moveDirection = Vector3.new()
+local vertical = 0
+
+local bodyGyro, bodyVelocity
+
+-- Start flying
+local function startFly()
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+	local humanoid = character:WaitForChild("Humanoid")
+
+	humanoid.PlatformStand = true
+
+	bodyVelocity = Instance.new("BodyVelocity", hrp)
+	bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	bodyVelocity.Velocity = Vector3.new()
+
+	bodyGyro = Instance.new("BodyGyro", hrp)
+	bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	bodyGyro.CFrame = hrp.CFrame
+
+	flying = true
+end
+
+-- Stop flying
+local function stopFly()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("Humanoid") then
+		character.Humanoid.PlatformStand = false
+	end
+	if bodyVelocity then bodyVelocity:Destroy() end
+	if bodyGyro then bodyGyro:Destroy() end
+	velocity = Vector3.new()
+	moveDirection = Vector3.new()
+	vertical = 0
+	flying = false
+end
+
+-- Input listeners
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	local cam = workspace.CurrentCamera
+	if input.KeyCode == Enum.KeyCode.W then moveDirection += cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.S then moveDirection -= cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.A then moveDirection -= cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.D then moveDirection += cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.Space then vertical = 1 end
+	if input.KeyCode == Enum.KeyCode.LeftControl then vertical = -1 end
+	if input.KeyCode == Enum.KeyCode.F then
+		if flying then stopFly() else startFly() end
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+	if gp then return end
+	local cam = workspace.CurrentCamera
+	if input.KeyCode == Enum.KeyCode.W then moveDirection -= cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.S then moveDirection += cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.A then moveDirection += cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.D then moveDirection -= cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.LeftControl then vertical = 0 end
+end)
+
+-- Movement update
+RunService.Heartbeat:Connect(function()
+	if flying and bodyVelocity and bodyGyro then
+		local moveVec = moveDirection + Vector3.new(0, vertical, 0)
+		local targetVelocity = moveVec.Magnitude > 0 and moveVec.Unit * speed or Vector3.new()
+		velocity = velocity:Lerp(targetVelocity, 0.2)
+		bodyVelocity.Velocity = velocity
+		bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+	end
+end)
