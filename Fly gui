@@ -1,0 +1,304 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- === UI Setup ===
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "FlyControllerUI"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 180, 0, 160)
+Frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(98, 0, 234)
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+
+local TitleBar = Instance.new("Frame", Frame)
+TitleBar.Size = UDim2.new(1, 0, 0, 25)
+TitleBar.BackgroundColor3 = Color3.fromRGB(79, 0, 190)
+
+local TitleText = Instance.new("TextLabel", TitleBar)
+TitleText.Size = UDim2.new(0.7, 0, 1, 0)
+TitleText.Position = UDim2.new(0.05, 0, 0, 0)
+TitleText.Text = "Fly & Joystick"
+TitleText.TextColor3 = Color3.fromRGB(240, 220, 255)
+TitleText.TextScaled = true
+TitleText.Font = Enum.Font.SourceSansBold
+TitleText.BackgroundTransparency = 1
+
+local MinimizeBtn = Instance.new("TextButton", TitleBar)
+MinimizeBtn.Size = UDim2.new(0, 30, 1, 0)
+MinimizeBtn.Position = UDim2.new(0.75, 0, 0, 0)
+MinimizeBtn.Text = "_"
+MinimizeBtn.TextColor3 = Color3.fromRGB(230, 200, 255)
+MinimizeBtn.TextScaled = true
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 8)
+
+local CloseBtn = Instance.new("TextButton", TitleBar)
+CloseBtn.Size = UDim2.new(0, 30, 1, 0)
+CloseBtn.Position = UDim2.new(0.9, 0, 0, 0)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(240, 220, 255)
+CloseBtn.TextScaled = true
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+local FlyToggle = Instance.new("TextButton", Frame)
+FlyToggle.Size = UDim2.new(1, -20, 0, 35)
+FlyToggle.Position = UDim2.new(0, 10, 0, 40)
+FlyToggle.Text = "Fly: OFF"
+FlyToggle.Font = Enum.Font.SourceSansBold
+FlyToggle.TextColor3 = Color3.fromRGB(230, 200, 255)
+FlyToggle.TextScaled = true
+Instance.new("UICorner", FlyToggle).CornerRadius = UDim.new(0, 8)
+
+local SpeedLabel = Instance.new("TextLabel", Frame)
+SpeedLabel.Size = UDim2.new(1, -20, 0, 20)
+SpeedLabel.Position = UDim2.new(0, 10, 0, 80)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Speed: 50"
+SpeedLabel.TextColor3 = Color3.fromRGB(240, 220, 255)
+SpeedLabel.Font = Enum.Font.SourceSansBold
+SpeedLabel.TextScaled = true
+
+local PlusBtn = Instance.new("TextButton", Frame)
+PlusBtn.Size = UDim2.new(0, 35, 0, 35)
+PlusBtn.Position = UDim2.new(0.72, 0, 0.65, 0)
+PlusBtn.Text = "+"
+PlusBtn.TextColor3 = Color3.fromRGB(240, 220, 255)
+Instance.new("UICorner", PlusBtn).CornerRadius = UDim.new(0, 10)
+PlusBtn.BackgroundColor3 = Color3.fromRGB(179, 0, 255)
+
+local MinusBtn = Instance.new("TextButton", Frame)
+MinusBtn.Size = UDim2.new(0, 35, 0, 35)
+MinusBtn.Position = UDim2.new(0.15, 0, 0.65, 0)
+MinusBtn.Text = "-"
+MinusBtn.TextColor3 = Color3.fromRGB(230, 200, 255)
+Instance.new("UICorner", MinusBtn).CornerRadius = UDim.new(0, 10)
+MinusBtn.BackgroundColor3 = Color3.fromRGB(98, 0, 234)
+
+-- Up / Down buttons for vertical movement
+local UpBtn = Instance.new("TextButton", Frame)
+UpBtn.Size = UDim2.new(0, 35, 0, 35)
+UpBtn.Position = UDim2.new(0.05, 0, 1, -40)
+UpBtn.Text = "↑"
+UpBtn.TextColor3 = Color3.fromRGB(240, 220, 255)
+Instance.new("UICorner", UpBtn).CornerRadius = UDim.new(0, 10)
+UpBtn.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
+
+local DownBtn = Instance.new("TextButton", Frame)
+DownBtn.Size = UDim2.new(0, 35, 0, 35)
+DownBtn.Position = UDim2.new(0.3, 0, 1, -40)
+DownBtn.Text = "↓"
+DownBtn.TextColor3 = Color3.fromRGB(240, 220, 255)
+Instance.new("UICorner", DownBtn).CornerRadius = UDim.new(0, 10)
+DownBtn.BackgroundColor3 = Color3.fromRGB(150, 60, 255)
+
+-- Joystick UI (single, rounded joystick)
+local joystickGui = Instance.new("ScreenGui", game.CoreGui)
+joystickGui.Name = "FlyJoystick"
+
+local outer = Instance.new("Frame", joystickGui)
+outer.Size = UDim2.new(0, 100, 0, 100)
+outer.Position = UDim2.new(0, 50, 1, -150)
+outer.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+outer.BackgroundTransparency = 0.6
+outer.ClipsDescendants = true
+outer.Active = true
+outer.ZIndex = 10
+local outerCorner = Instance.new("UICorner", outer)
+outerCorner.CornerRadius = UDim.new(1, 0) -- Rounded base
+
+local inner = Instance.new("Frame", outer)
+inner.Size = UDim2.new(0, 50, 0, 50)
+inner.Position = UDim2.new(0.5, -25, 0.5, -25)
+inner.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+inner.BackgroundTransparency = 0.4
+inner.ZIndex = 11
+local innerCorner = Instance.new("UICorner", inner)
+innerCorner.CornerRadius = UDim.new(1, 0) -- Rounded knob
+
+local radius = 50
+local dragging = false
+local dragInput, dragStart
+local inputVector = Vector2.new(0, 0)
+
+outer.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		dragInput = input
+		outer.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				inputVector = Vector2.new(0, 0)
+				outer.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+				-- Tween knob back to center
+				local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+				local tween = TweenService:Create(inner, tweenInfo, {Position = UDim2.new(0.5, -25, 0.5, -25)})
+				tween:Play()
+			end
+		end)
+	end
+end)
+
+outer.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		local clamped = Vector2.new(math.clamp(delta.X, -radius, radius), math.clamp(delta.Y, -radius, radius))
+		inputVector = clamped / radius
+		inner.Position = UDim2.new(0.5, clamped.X - 25, 0.5, clamped.Y - 25)
+	end
+end)
+
+-- Flying Logic
+local flying = false
+local speed = 50
+local currentVelocity = Vector3.new(0, 0, 0)
+local verticalMove = 0
+local moveKB = Vector3.new(0, 0, 0)
+local bodyVelocity, bodyGyro
+
+local function startFly()
+	if flying then return end
+	flying = true
+
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+	local humanoid = character:WaitForChild("Humanoid")
+
+	humanoid.PlatformStand = true
+
+	bodyVelocity = Instance.new("BodyVelocity", hrp)
+	bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+
+	bodyGyro = Instance.new("BodyGyro", hrp)
+	bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	bodyGyro.CFrame = hrp.CFrame
+end
+
+local function stopFly()
+	flying = false
+	local character = LocalPlayer.Character
+	if not character then return end
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.PlatformStand = false
+	end
+	if bodyVelocity then
+		bodyVelocity:Destroy()
+		bodyVelocity = nil
+	end
+	if bodyGyro then
+		bodyGyro:Destroy()
+		bodyGyro = nil
+	end
+	currentVelocity = Vector3.new(0, 0, 0)
+end
+
+-- Keyboard fallback for PC controls
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed or not flying then return end
+	local cam = workspace.CurrentCamera
+	if input.KeyCode == Enum.KeyCode.W then moveKB += cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.S then moveKB -= cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.A then moveKB -= cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.D then moveKB += cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.Space then verticalMove = 1 end
+	if input.KeyCode == Enum.KeyCode.LeftControl then verticalMove = -1 end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	if gameProcessed or not flying then return end
+	local cam = workspace.CurrentCamera
+	if input.KeyCode == Enum.KeyCode.W then moveKB -= cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.S then moveKB += cam.CFrame.LookVector end
+	if input.KeyCode == Enum.KeyCode.A then moveKB += cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.D then moveKB -= cam.CFrame.RightVector end
+	if input.KeyCode == Enum.KeyCode.Space then verticalMove = 0 end
+	if input.KeyCode == Enum.KeyCode.LeftControl then verticalMove = 0 end
+end)
+
+-- Up/Down Buttons for vertical movement
+UpBtn.MouseButton1Down:Connect(function() verticalMove = 1 end)
+UpBtn.MouseButton1Up:Connect(function() verticalMove = 0 end)
+DownBtn.MouseButton1Down:Connect(function() verticalMove = -1 end)
+DownBtn.MouseButton1Up:Connect(function() verticalMove = 0 end)
+
+-- Fly toggle button
+FlyToggle.MouseButton1Click:Connect(function()
+	if flying then
+		stopFly()
+		FlyToggle.Text = "Fly: OFF"
+		joystickGui.Enabled = false
+	else
+		startFly()
+		FlyToggle.Text = "Fly: ON"
+		joystickGui.Enabled = true
+	end
+end)
+
+-- Speed buttons
+PlusBtn.MouseButton1Click:Connect(function()
+	speed += 10
+	SpeedLabel.Text = "Speed: " .. speed
+end)
+
+MinusBtn.MouseButton1Click:Connect(function()
+	speed = math.max(10, speed - 10)
+	SpeedLabel.Text = "Speed: " .. speed
+end)
+
+-- Minimize button
+local minimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+	if minimized then
+		Frame.Size = UDim2.new(0, 180, 0, 160)
+		FlyToggle.Visible = true
+		PlusBtn.Visible = true
+		MinusBtn.Visible = true
+		SpeedLabel.Visible = true
+		UpBtn.Visible = true
+		DownBtn.Visible = true
+		minimized = false
+	else
+		Frame.Size = UDim2.new(0, 180, 0, 30)
+		FlyToggle.Visible = false
+		PlusBtn.Visible = false
+		MinusBtn.Visible = false
+		SpeedLabel.Visible = false
+		UpBtn.Visible = false
+		DownBtn.Visible = false
+		minimized = true
+	end
+end)
+
+-- Close button
+CloseBtn.MouseButton1Click:Connect(function()
+	stopFly()
+	ScreenGui:Destroy()
+	joystickGui:Destroy()
+	script:Destroy()
+end)
+
+-- Main loop to update flying velocity
+RunService.Heartbeat:Connect(function(dt)
+	if flying and bodyVelocity and bodyGyro then
+		local cam = workspace.CurrentCamera
+		local joyMove = cam.CFrame.RightVector * inputVector.X - cam.CFrame.LookVector * inputVector.Y
+		local moveVector = moveKB + joyMove + Vector3.new(0, verticalMove, 0)
+		local targetVelocity = moveVector.Magnitude > 0 and moveVector.Unit * speed or Vector3.new(0, 0, 0)
+		currentVelocity = currentVelocity:Lerp(targetVelocity, 0.2)
+		bodyVelocity.Velocity = currentVelocity
+		bodyGyro.CFrame = cam.CFrame
+	end
+end)
+
+-- Start with joystick disabled
+joystickGui.Enabled = false
